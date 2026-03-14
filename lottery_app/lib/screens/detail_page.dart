@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/kuji_status.dart';
 import 'dart:math';
-import 'animation_page.dart';
+import 'payment_page.dart';
 // ③ くじ詳細画面
 class KujiDetailPage extends StatefulWidget {
   final KujiStatus status;
@@ -80,8 +80,13 @@ class _KujiDetailPageState extends State<KujiDetailPage> {
     });
 
     Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => LotteryAnimationPage(resultName: resultName)),
-    );
+    context,
+    MaterialPageRoute(
+      builder: (context) => PaymentPage(
+        kujiName: widget.status.kujiName,
+        resultName: resultName, // 決まった結果を決済画面に渡しておく
+      ),
+    ),
+  );
   }
 }

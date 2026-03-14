@@ -1,11 +1,10 @@
+// lib/main.dart
 import 'package:flutter/material.dart';
-import 'screens/top_page.dart';
+import 'screens/login_page.dart'; // ログイン画面をインポート
 
 void main() {
   runApp(const SmartKujiApp());
 }
-
-
 
 class SmartKujiApp extends StatelessWidget {
   const SmartKujiApp({super.key});
@@ -18,15 +17,8 @@ class SmartKujiApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blueAccent),
         useMaterial3: true,
       ),
-      home: const TopPage(),
+      // homeをLoginPageに変更
+      home: const LoginPage(), 
     );
   }
 }
-
-
-
-
-
-
-
-

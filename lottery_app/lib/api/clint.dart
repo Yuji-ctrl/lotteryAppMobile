@@ -7,12 +7,12 @@ class ApiClient {
   static final PaymentsApi paymentsApi = PaymentsApi();
 
   /// 認証トークンを設定する
-  static void setAuthToken(String token) {
-    final bearerAuth = defaultApiClient.getAuthentication<HttpBearerAuth>('bearerAuth');
-    if (bearerAuth != null) {
-      bearerAuth.setAccessToken(token);
-    }
-  }
+  // static void setAuthToken(String token) {
+  //   final bearerAuth = defaultApiClient.getAuthentication<HttpBearerAuth>('bearerAuth');
+  //   if (bearerAuth != null) {
+  //     bearerAuth.setAccessToken(token);
+  //   }
+  // }
 
   /// 動作確認用のテストメソッド
   static Future<void> testConnection() async {

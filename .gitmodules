@@ -1,6 +1,3 @@
-[submodule "Progate-2026"]
-        path = Progate-2026
-        url = https://github.com/Cherry-115/Progate-2026.git
 [submodule "Probate-2026-openapi"]
         path = Probate-2026-openapi
         url = https://github.com/Cherry-115/Probate-2026-openapi.git

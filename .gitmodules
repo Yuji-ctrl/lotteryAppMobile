@@ -1,0 +1,3 @@
+[submodule "Probate-2026-openapi"]
+        path = Probate-2026-openapi
+        url = https://github.com/Cherry-115/Probate-2026-openapi.git

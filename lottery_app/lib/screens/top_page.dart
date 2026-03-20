@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart';
+import 'login_page.dart';
 // ① トップ画面
 class TopPage extends StatelessWidget {
   const TopPage({super.key});
@@ -15,7 +15,7 @@ class TopPage extends StatelessWidget {
             const Text('スマホで引けるコンビニくじ', style: TextStyle(fontSize: 18)),
             const SizedBox(height: 40),
             ElevatedButton(
-              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const HomePage())),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginPage())),
               child: const Text('はじめる'),
             ),
           ],

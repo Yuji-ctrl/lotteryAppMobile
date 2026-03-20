@@ -18,6 +18,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
   // 全店舗の在庫データをリストで保持
+class _HomePageState extends State<HomePage> {
+  // 全店舗の在庫データをリストで保持（現在地から半径500m以内に配置）
   final List<KujiStatus> _allShops = [
     KujiStatus(
       shopName: 'ローソン',
@@ -117,6 +119,7 @@ class _HomePageState extends State<HomePage>
               _mapController.move(
                 LatLng(position.latitude, position.longitude),
                 _mapController.camera.zoom,
+                _mapController.zoom,
               );
             });
           });
@@ -133,6 +136,12 @@ class _HomePageState extends State<HomePage>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('${shop.shopName}\n${shop.kujiName}')),
     );
+  }
+
+  @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -165,6 +174,116 @@ class _HomePageState extends State<HomePage>
             onRefresh: () {
               setState(() {});
             },
+          SizedBox(
+            height: 250,
+            child: FlutterMap(
+              mapController: _mapController,
+              options: MapOptions(
+                initialCenter: initialCenter,
+                initialZoom: 15,
+              ),
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  userAgentPackageName: 'com.example.app',
+                ),
+                if (_currentPosition != null)
+                  CircleLayer(
+                    circles: [
+                      CircleMarker(
+                        point: LatLng(
+                          _currentPosition!.latitude,
+                          _currentPosition!.longitude,
+                        ),
+                        color: Colors.blue.withOpacity(0.15),
+                        borderStrokeWidth: 2,
+                        borderColor: Colors.blue,
+                        useRadiusInMeter: true,
+                        radius: _nearbyRadiusMeters,
+                      ),
+                    ],
+                  ),
+                MarkerLayer(
+                  markers: [
+                    // 現在位置
+                    if (_currentPosition != null)
+                      Marker(
+                        point: LatLng(
+                          _currentPosition!.latitude,
+                          _currentPosition!.longitude,
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          width: 20,
+                          height: 20,
+                        ),
+                      ),
+                    // 店舗マーカー
+                    ..._nearbyShops.map((shop) {
+                      return Marker(
+                        point: LatLng(shop.latitude, shop.longitude),
+                        child: GestureDetector(
+                          onTap: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  '${shop.shopName}\n${shop.kujiName}',
+                                ),
+                              ),
+                            );
+                          },
+                          child: Icon(
+                            Icons.location_on,
+                            color: shop.isSoldOut ? Colors.grey : Colors.red,
+                            size: 40,
+                          ),
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _nearbyShops.length,
+              itemBuilder: (context, index) {
+                final shop = _nearbyShops[index];
+                return Card(
+                  margin: const EdgeInsets.all(8.0),
+                  color: shop.isSoldOut ? Colors.grey[300] : Colors.white,
+                  child: ListTile(
+                    title: Text(
+                      shop.shopName,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      '開催中：${shop.kujiName}${shop.isSoldOut ? " (完売)" : ""}',
+                    ),
+                    trailing: ElevatedButton(
+                      onPressed: shop.isSoldOut
+                          ? null
+                          : () async {
+                              await Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      KujiDetailPage(status: shop),
+                                ),
+                              );
+                              setState(() {});
+                            },
+                      child: Text(shop.isSoldOut ? '完売' : 'くじを見る'),
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'top_page.dart';
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -18,7 +18,7 @@ class _LoginPageState extends State<LoginPage> {
     if (_emailController.text.isNotEmpty && _passwordController.text.isNotEmpty) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const TopPage()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(

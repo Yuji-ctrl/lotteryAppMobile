@@ -5,8 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../models/kuji_status.dart';
-import 'tabs/map_tab.dart';
-import 'tabs/list_tab.dart';
+import 'detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,9 +14,6 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage>
-    with SingleTickerProviderStateMixin {
-  // 全店舗の在庫データをリストで保持
 class _HomePageState extends State<HomePage> {
   // 全店舗の在庫データをリストで保持（現在地から半径500m以内に配置）
   final List<KujiStatus> _allShops = [
@@ -49,7 +45,6 @@ class _HomePageState extends State<HomePage> {
 
   Position? _currentPosition;
   final MapController _mapController = MapController();
-  late TabController _tabController;
   StreamSubscription<Position>? _positionSubscription;
   List<KujiStatus> _nearbyShops = [];
   static const double _nearbyRadiusMeters = 500;
@@ -57,16 +52,8 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
     _nearbyShops = List<KujiStatus>.from(_allShops);
     _loadCurrentLocation();
-  }
-
-  @override
-  void dispose() {
-    _positionSubscription?.cancel();
-    _tabController.dispose();
-    super.dispose();
   }
 
   void _updateNearbyShops() {
@@ -100,10 +87,7 @@ class _HomePageState extends State<HomePage> {
 
       // 初回取得時に地図を現在地へ移動
       if (_currentPosition != null) {
-        _mapController.move(
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          15,
-        );
+        
       }
 
       _positionSubscription =
@@ -118,7 +102,6 @@ class _HomePageState extends State<HomePage> {
               _updateNearbyShops();
               _mapController.move(
                 LatLng(position.latitude, position.longitude),
-                _mapController.camera.zoom,
                 _mapController.zoom,
               );
             });
@@ -132,12 +115,6 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  void _handleMarkerTap(KujiStatus shop) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('${shop.shopName}\n${shop.kujiName}')),
-    );
-  }
-
   @override
   void dispose() {
     _positionSubscription?.cancel();
@@ -146,34 +123,14 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final initialCenter = _currentPosition != null
+        ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
+        : LatLng(35.8738, 139.7955);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('近くのコンビニ'),
-        bottom: TabBar(
-          controller: _tabController,
-          tabs: const [
-            Tab(icon: Icon(Icons.map), text: 'マップ'),
-            Tab(icon: Icon(Icons.list), text: 'リスト'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        physics: const NeverScrollableScrollPhysics(), // マップ操作との干渉を防ぐ
+      appBar: AppBar(title: const Text('近くのコンビニ')),
+      body: Column(
         children: [
-          // マップタブ
-          MapTab(
-            shops: _nearbyShops,
-            currentPosition: _currentPosition,
-            mapController: _mapController,
-            onMarkerTap: _handleMarkerTap,
-          ),
-          // リストタブ
-          ListTab(
-            shops: _nearbyShops,
-            onRefresh: () {
-              setState(() {});
-            },
           SizedBox(
             height: 250,
             child: FlutterMap(
@@ -185,7 +142,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.app',
+                  userAgentPackageName: 'com.yourname.kujimap',
                 ),
                 if (_currentPosition != null)
                   CircleLayer(

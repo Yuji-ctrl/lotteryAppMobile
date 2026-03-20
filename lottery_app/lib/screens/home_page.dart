@@ -87,10 +87,7 @@ class _HomePageState extends State<HomePage> {
 
       // 初回取得時に地図を現在地へ移動
       if (_currentPosition != null) {
-        _mapController.move(
-          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
-          15,
-        );
+        
       }
 
       _positionSubscription =
@@ -145,7 +142,7 @@ class _HomePageState extends State<HomePage> {
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.app',
+                  userAgentPackageName: 'com.yourname.kujimap',
                 ),
                 if (_currentPosition != null)
                   CircleLayer(

@@ -22,7 +22,7 @@ class MapTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final initialCenter = currentPosition != null
         ? LatLng(currentPosition!.latitude, currentPosition!.longitude)
-        : const LatLng(35.8738, 139.7955);
+        : const LatLng(35.6339, 139.7036);
     
     final nearbyRadiusMeters = 500.0;
 

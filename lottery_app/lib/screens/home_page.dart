@@ -16,32 +16,37 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   // 全店舗の在庫データをリストで保持（現在地から半径500m以内に配置）
-  final List<KujiStatus> _allShops = [
-    KujiStatus(
-      shopName: 'ローソン',
-      kujiName: 'ワンピース 一番くじ',
-      latitude: 35.8725,
-      longitude: 139.7915,
-    ),
-    KujiStatus(
-      shopName: 'ファミリーマート',
-      kujiName: 'ポケモンくじ',
-      prizeA: 2,
-      prizeB: 5,
-      prizeC: 15,
-      latitude: 35.8680,
-      longitude: 139.7905,
-    ),
-    KujiStatus(
-      shopName: 'セブンイレブン',
-      kujiName: 'お菓子くじ',
-      prizeA: 5,
-      prizeB: 10,
-      prizeC: 30,
-      latitude: 35.8700,
-      longitude: 139.7860,
-    ),
-  ];
+  List<KujiStatus> _allShops = [];
+
+  List<KujiStatus> _generateNearbyShops(Position current) {
+    // 現在地を中心に約200m前後の仮想コンビニを3つ配置（すべて500m以内）
+    return [
+      KujiStatus(
+        shopName: 'ローソン',
+        kujiName: 'ワンピース 一番くじ',
+        latitude: current.latitude + 0.0016, // 約180m
+        longitude: current.longitude + 0.0012, // 約120m
+      ),
+      KujiStatus(
+        shopName: 'ファミリーマート',
+        kujiName: 'ポケモンくじ',
+        prizeA: 2,
+        prizeB: 5,
+        prizeC: 15,
+        latitude: current.latitude - 0.0012, // 約135m
+        longitude: current.longitude + 0.0009, // 約100m
+      ),
+      KujiStatus(
+        shopName: 'セブンイレブン',
+        kujiName: 'お菓子くじ',
+        prizeA: 5,
+        prizeB: 10,
+        prizeC: 30,
+        latitude: current.latitude + 0.0008, // 約90m
+        longitude: current.longitude - 0.0010, // 約110m
+      ),
+    ];
+  }
 
   Position? _currentPosition;
   final MapController _mapController = MapController();
@@ -82,12 +87,23 @@ class _HomePageState extends State<HomePage> {
     final permission = await Geolocator.requestPermission();
     if (permission == LocationPermission.whileInUse ||
         permission == LocationPermission.always) {
-      _currentPosition = await Geolocator.getCurrentPosition();
+      _currentPosition = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.medium,
+        timeLimit: const Duration(seconds: 60),
+      );
+
+      if (_currentPosition != null) {
+        _allShops = _generateNearbyShops(_currentPosition!);
+      }
+
       _updateNearbyShops();
 
       // 初回取得時に地図を現在地へ移動
       if (_currentPosition != null) {
-        
+        _mapController.move(
+          LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+          15,
+        );
       }
 
       _positionSubscription =
@@ -125,7 +141,7 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final initialCenter = _currentPosition != null
         ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-        : LatLng(35.8738, 139.7955);
+        : LatLng(35.6339, 139.7036);
 
     return Scaffold(
       appBar: AppBar(title: const Text('近くのコンビニ')),

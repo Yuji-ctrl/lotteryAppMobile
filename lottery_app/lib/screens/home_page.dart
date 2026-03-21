@@ -55,17 +55,9 @@ class _HomePageState extends State<HomePage> {
     });
 
     try {
-      final latitude = _currentPosition?.latitude ?? _fallbackLatitude;
-      final longitude = _currentPosition?.longitude ?? _fallbackLongitude;
-      final stores = await _apiService.fetchNearbyStores(
-        latitude: latitude,
-        longitude: longitude,
-        searchRadiusMeter: 1000000,
-      );
-      // if (kDebugMode) {
-      if (true) {
-        // debugPrint('fetchNearbyStores response count: ${stores.length}');
-        print('fetchNearbyStores response count: ${stores.length}');
+      final stores = await _apiService.fetchAllStores();
+      if (kDebugMode) {
+        print('fetchAllStores response count: ${stores.length}');
         for (final store in stores.take(5)) {
           print(
             'storeId=${store.storeId}, storeName=${store.storeName}, latitude=${store.latitude}, longitude=${store.longitude}',

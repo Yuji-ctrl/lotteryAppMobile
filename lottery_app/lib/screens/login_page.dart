@@ -1,32 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:openapi/api.dart' show ApiException, AuthResponse;
 
-import '../services/api_service.dart';
-import 'top_page.dart';
+import 'home_page.dart';
 
 class LoginPage extends StatefulWidget {
-  const LoginPage({super.key, ApiService? apiService}) : _apiService = apiService;
-
-  final ApiService? _apiService;
+  const LoginPage({super.key});
 
   @override
   State<LoginPage> createState() => _LoginPageState();
 }
 
 class _LoginPageState extends State<LoginPage> {
-  late final ApiService _apiService;
   final _displayNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isSignupMode = false;
   bool _isSubmitting = false;
   String? _authToken;
-
-  @override
-  void initState() {
-    super.initState();
-    _apiService = widget._apiService ?? ApiService();
-  }
 
   @override
   void dispose() {
@@ -55,24 +44,16 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      final AuthResponse response;
-      if (_isSignupMode) {
-        response = await _apiService.signup(
-          displayName: displayName,
-          email: email,
-          password: password,
-        );
-      } else {
-        response = await _apiService.login(
-          email: email,
-          password: password,
-        );
-      }
+      final token = await _mockAuthenticate(
+        displayName: displayName,
+        email: email,
+        password: password,
+      );
 
       if (!mounted) return;
 
       setState(() {
-        _authToken = response.accessToken;
+        _authToken = token;
       });
 
       _showMessage(_isSignupMode ? '新規登録に成功しました' : 'ログインに成功しました');
@@ -81,13 +62,6 @@ class _LoginPageState extends State<LoginPage> {
         context,
         MaterialPageRoute(builder: (context) => const HomePage()),
       );
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      final message = ApiService.authUserMessageFromException(
-        e,
-        isSignup: _isSignupMode,
-      );
-      _showMessage(message);
     } catch (_) {
       if (!mounted) return;
       final action = _isSignupMode ? '新規登録' : 'ログイン';
@@ -98,6 +72,17 @@ class _LoginPageState extends State<LoginPage> {
         _isSubmitting = false;
       });
     }
+  }
+
+  Future<String> _mockAuthenticate({
+    required String displayName,
+    required String email,
+    required String password,
+  }) async {
+    await Future<void>.delayed(const Duration(milliseconds: 500));
+    final mode = _isSignupMode ? 'signup' : 'login';
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    return 'mock-$mode-${email.hashCode}-${password.hashCode}-$timestamp';
   }
 
   void _showMessage(String message) {
@@ -117,28 +102,44 @@ class _LoginPageState extends State<LoginPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.shopping_bag_outlined, size: 80, color: Colors.blueAccent),
+            const Icon(
+              Icons.shopping_bag_outlined,
+              size: 80,
+              color: Colors.blueAccent,
+            ),
             const SizedBox(height: 20),
-            const Text('Smart Kujiへようこそ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text(
+              'Smart Kujiへようこそ',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 30),
             if (_isSignupMode) ...[
               TextField(
                 controller: _displayNameController,
                 enabled: !_isSubmitting,
-                decoration: const InputDecoration(labelText: '表示名', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: '表示名',
+                  border: OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 16),
             ],
             TextField(
               controller: _emailController,
               enabled: !_isSubmitting,
-              decoration: const InputDecoration(labelText: 'メールアドレス', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'メールアドレス',
+                border: OutlineInputBorder(),
+              ),
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
               enabled: !_isSubmitting,
-              decoration: const InputDecoration(labelText: 'パスワード', border: OutlineInputBorder()),
+              decoration: const InputDecoration(
+                labelText: 'パスワード',
+                border: OutlineInputBorder(),
+              ),
               obscureText: true, // パスワードを隠す
             ),
             const SizedBox(height: 24),
@@ -147,7 +148,10 @@ class _LoginPageState extends State<LoginPage> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Text(
                   '認証トークン取得済み',
-                  style: TextStyle(color: Colors.green.shade700, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    color: Colors.green.shade700,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             SizedBox(
@@ -155,7 +159,9 @@ class _LoginPageState extends State<LoginPage> {
               height: 50,
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitAuth,
-                child: Text(_isSubmitting ? '送信中...' : (_isSignupMode ? '新規登録' : 'ログイン')),
+                child: Text(
+                  _isSubmitting ? '送信中...' : (_isSignupMode ? '新規登録' : 'ログイン'),
+                ),
               ),
             ),
             TextButton(

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import '../models/kuji_repository.dart';
 import '../models/kuji_status.dart';
 import 'detail_page.dart';
 
@@ -15,33 +16,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // 全店舗の在庫データをリストで保持（現在地から半径500m以内に配置）
-  final List<KujiStatus> _allShops = [
-    KujiStatus(
-      shopName: 'ローソン',
-      kujiName: 'ワンピース 一番くじ',
-      latitude: 35.8725,
-      longitude: 139.7915,
-    ),
-    KujiStatus(
-      shopName: 'ファミリーマート',
-      kujiName: 'ポケモンくじ',
-      prizeA: 2,
-      prizeB: 5,
-      prizeC: 15,
-      latitude: 35.8680,
-      longitude: 139.7905,
-    ),
-    KujiStatus(
-      shopName: 'セブンイレブン',
-      kujiName: 'お菓子くじ',
-      prizeA: 5,
-      prizeB: 10,
-      prizeC: 30,
-      latitude: 35.8700,
-      longitude: 139.7860,
-    ),
-  ];
+  // 共有リポジトリからデータ管理
+  List<KujiStatus> _allShops = [];
 
   Position? _currentPosition;
   final MapController _mapController = MapController();
@@ -52,11 +28,14 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    _allShops = KujiRepository().shops;
     _nearbyShops = List<KujiStatus>.from(_allShops);
     _loadCurrentLocation();
   }
 
   void _updateNearbyShops() {
+    _allShops = KujiRepository().shops;
+
     if (_currentPosition == null) {
       _nearbyShops = List<KujiStatus>.from(_allShops);
       return;
@@ -122,7 +101,8 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) {    _allShops = KujiRepository().shops;
+    _updateNearbyShops();
     final initialCenter = _currentPosition != null
         ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
         : LatLng(35.8738, 139.7955);

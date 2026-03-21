@@ -4,11 +4,15 @@ import 'animation_page.dart';
 class PaymentPage extends StatelessWidget {
   final String kujiName;
   final String resultName; // 既に決まった抽選結果を引き継ぐ
+  final String shopName;
+  final String prizeType;
 
   const PaymentPage({
     super.key,
     required this.kujiName,
     required this.resultName,
+    required this.shopName,
+    required this.prizeType,
   });
 
   @override
@@ -42,7 +46,13 @@ class PaymentPage extends StatelessWidget {
                   // 決済完了後、抽選演出へ
                   Navigator.pushReplacement(
                     context,
-                    MaterialPageRoute(builder: (context) => LotteryAnimationPage(resultName: resultName)),
+                    MaterialPageRoute(
+                      builder: (context) => LotteryAnimationPage(
+                        resultName: resultName,
+                        shopName: shopName,
+                        prizeType: prizeType,
+                      ),
+                    ),
                   );
                 },
                 child: const Text('決済を確定してくじを引く', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),

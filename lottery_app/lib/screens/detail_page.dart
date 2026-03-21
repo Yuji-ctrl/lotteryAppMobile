@@ -66,27 +66,28 @@ class _KujiDetailPageState extends State<KujiDetailPage> {
     String pick = pool[random.nextInt(pool.length)];
 
     String resultName = "";
-    setState(() {
-      if (pick == "A") {
-        widget.status.prizeA--;
-        resultName = "A賞 フィギュア";
-      } else if (pick == "B") {
-        widget.status.prizeB--;
-        resultName = "B賞 タオル";
-      } else {
-        widget.status.prizeC--;
-        resultName = "C賞 キーホルダー";
-      }
-    });
+    String prizeType = "";
+    if (pick == "A") {
+      prizeType = "A";
+      resultName = "A賞 フィギュア";
+    } else if (pick == "B") {
+      prizeType = "B";
+      resultName = "B賞 タオル";
+    } else {
+      prizeType = "C";
+      resultName = "C賞 キーホルダー";
+    }
 
     Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => PaymentPage(
-        kujiName: widget.status.kujiName,
-        resultName: resultName, // 決まった結果を決済画面に渡しておく
+      context,
+      MaterialPageRoute(
+        builder: (context) => PaymentPage(
+          kujiName: widget.status.kujiName,
+          resultName: resultName,
+          shopName: widget.status.shopName,
+          prizeType: prizeType,
+        ),
       ),
-    ),
-  );
+    );
   }
 }

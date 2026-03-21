@@ -14,8 +14,8 @@ class KujiRepository {
       prizeA: 2,
       prizeB: 5,
       prizeC: 15,
-      latitude: 35.6339,
-      longitude: 139.7036,
+      latitude: 35.633358,
+      longitude: 139.716588,
     ),
     KujiStatus(
       shopName: 'ファミリーマート',
@@ -23,8 +23,8 @@ class KujiRepository {
       prizeA: 3,
       prizeB: 6,
       prizeC: 12,
-      latitude: 35.6344,
-      longitude: 139.7042,
+      latitude: 35.633858,
+      longitude: 139.717088,
     ),
     KujiStatus(
       shopName: 'セブンイレブン',
@@ -32,8 +32,8 @@ class KujiRepository {
       prizeA: 4,
       prizeB: 8,
       prizeC: 20,
-      latitude: 35.6330,
-      longitude: 139.7028,
+      latitude: 35.632858,
+      longitude: 139.716088,
     ),
   ];
 

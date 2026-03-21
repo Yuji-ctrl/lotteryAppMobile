@@ -38,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
           children: [
             const Icon(Icons.shopping_bag_outlined, size: 80, color: Colors.blueAccent),
             const SizedBox(height: 20),
-            const Text('Smart Kujiへようこそ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+            const Text('ちぇっくじ！へようこそ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 30),
             TextField(
               controller: _emailController,

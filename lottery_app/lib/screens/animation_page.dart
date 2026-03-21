@@ -5,7 +5,13 @@ import 'dart:math';
 // ④ 抽選演出画面
 class LotteryAnimationPage extends StatefulWidget {
   final String resultName;
-  const LotteryAnimationPage({super.key, required this.resultName});
+  final String? resultId;
+
+  const LotteryAnimationPage({
+    super.key,
+    required this.resultName,
+    this.resultId,
+  });
 
   @override
   State<LotteryAnimationPage> createState() => _LotteryAnimationPageState();

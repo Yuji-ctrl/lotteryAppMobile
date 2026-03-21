@@ -11,7 +11,7 @@ class TopPage extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Text('Smart Kuji', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+            const Text('ちぇっくじ！', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
             const Text('スマホで引けるコンビニくじ', style: TextStyle(fontSize: 18)),
             const SizedBox(height: 40),
             ElevatedButton(

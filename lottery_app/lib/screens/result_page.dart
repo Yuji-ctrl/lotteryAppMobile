@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:openapi/api.dart' show ApiException, LotteryResult, LotteryResultDetail;
+import 'package:openapi/api.dart'
+    show ApiException, LotteryResult, LotteryResultDetail;
 
 import '../services/api_service.dart';
 import 'exchange_page.dart';
@@ -47,41 +48,61 @@ class _ResultPageState extends State<ResultPage> {
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const Text(
-              '当たり',
-              style: TextStyle(
-                fontSize: 24,
-                color: Colors.red,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '🎉 ${widget.resultName} 当選 🎉',
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
+            _buildWinningHeader(),
             const SizedBox(height: 16),
-            Expanded(
-              child: _buildHistoryAndDetail(),
+            Expanded(child: _buildHistoryAndDetail()),
+            const SizedBox(height: 12),
+            const Text(
+              'この画面を店舗スタッフに見せてください',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54),
             ),
             const SizedBox(height: 12),
-            const Text('この画面を店舗スタッフに見せてください'),
-            const SizedBox(height: 16),
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const ExchangePage(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const ExchangePage()),
                 ),
                 child: const Text('景品を受け取る'),
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWinningHeader() {
+    return Center(
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+          child: Column(
+            children: [
+              const Text(
+                '当たり',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '🎉 ${widget.resultName} 当選 🎉',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -99,25 +120,22 @@ class _ResultPageState extends State<ResultPage> {
           children: [
             Text(_historyError!),
             const SizedBox(height: 12),
-            ElevatedButton(
-              onPressed: _loadHistory,
-              child: const Text('再試行'),
-            ),
+            ElevatedButton(onPressed: _loadHistory, child: const Text('再試行')),
           ],
         ),
       );
     }
 
     if (_history.isEmpty) {
-      return const Center(child: Text('抽選履歴がありません'));
+      return const Center(child: Text('履歴がありません'));
     }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          '抽選履歴',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+          '履歴から詳細を確認できます',
+          style: TextStyle(fontSize: 14, color: Colors.black54),
         ),
         const SizedBox(height: 8),
         Expanded(
@@ -269,7 +287,9 @@ class _ResultPageState extends State<ResultPage> {
     });
 
     try {
-      final detail = await _apiService.fetchLotteryResultDetail(resultId: resultId);
+      final detail = await _apiService.fetchLotteryResultDetail(
+        resultId: resultId,
+      );
       if (!mounted) return;
       setState(() {
         _selectedDetail = detail;

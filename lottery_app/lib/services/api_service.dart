@@ -1,13 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:collection/collection.dart';
 import 'package:openapi/api.dart';
 
 class ApiService {
-  static const String _storesAllFallbackBasePath =
-      'https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod';
-  static const String _storesAllPath = '/stores-all';
-
   ApiService({
     AuthApi? authApi,
     StoresApi? storesApi,
@@ -16,39 +13,12 @@ class ApiService {
   }) : _authApi = authApi ?? AuthApi(),
        _storesApi = storesApi ?? StoresApi(),
        _lotteryApi = lotteryApi ?? LotteryApi(),
-       _paymentsApi = paymentsApi ?? PaymentsApi() {
-    _storesAllApiClient = _buildStoresAllApiClient(_storesApi.apiClient);
-  }
+       _paymentsApi = paymentsApi ?? PaymentsApi();
 
   final AuthApi _authApi;
   final StoresApi _storesApi;
   final LotteryApi _lotteryApi;
   final PaymentsApi _paymentsApi;
-  late final ApiClient _storesAllApiClient;
-
-  static ApiClient _buildStoresAllApiClient(ApiClient storesApiClient) {
-    final client = ApiClient(
-      basePath: _resolveStoresAllBasePath(storesApiClient.basePath),
-      authentication: storesApiClient.authentication,
-    )..client = storesApiClient.client;
-
-    client.defaultHeaderMap.addAll(storesApiClient.defaultHeaderMap);
-    return client;
-  }
-
-  static String _resolveStoresAllBasePath(String currentBasePath) {
-    final normalized = currentBasePath.trim();
-    if (normalized.isEmpty) {
-      return _storesAllFallbackBasePath;
-    }
-
-    final uri = Uri.tryParse(normalized);
-    if (uri == null || uri.host == 'api.example.com') {
-      return _storesAllFallbackBasePath;
-    }
-
-    return normalized;
-  }
 
   Future<AuthResponse> login({
     required String email,
@@ -108,28 +78,18 @@ class ApiService {
 
   Future<List<Store>> fetchAllStores() async {
     try {
-      final response = await _storesAllApiClient.invokeAPI(
-        _storesAllPath,
-        'GET',
-        <QueryParam>[],
-        null,
-        <String, String>{},
-        <String, String>{},
-        null,
-      );
-      if (response.statusCode < 200 || response.statusCode >= 300) {
+      final response = await _storesApi.storesAllGetWithHttpInfo();
+      if (response.statusCode >= HttpStatus.badRequest) {
         throw ApiException(response.statusCode, response.body);
       }
-
-      final decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic>) {
-        throw ApiException(500, '店舗一覧の取得結果の形式が不正でした');
-      }
-
-      final storesResponse = ListStores200Response.fromJson(decoded);
-      if (storesResponse == null) {
+      if (response.body.isEmpty || response.statusCode == HttpStatus.noContent) {
         throw ApiException(500, '店舗一覧の取得結果が空でした');
       }
+
+      final storesResponse = await _storesApi.apiClient.deserializeAsync(
+        response.body,
+        'ListStores200Response',
+      ) as ListStores200Response;
       return storesResponse.items
           .where((store) => store.isActive)
           .toList(growable: false);

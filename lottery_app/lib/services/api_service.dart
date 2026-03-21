@@ -6,38 +6,29 @@ import 'package:openapi/api.dart';
 
 class ApiService {
   static const String _defaultAuthBasePath =
-    'https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod';
+      'https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod';
   static const String _defaultStoresBasePath =
-    'https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod';
+      'https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod';
   static const String _defaultLotteryBasePath =
-    'https://z2pkcs0rc0.execute-api.ap-northeast-1.amazonaws.com/Prod';
-  static const String _defaultPaymentsBasePath =
-    'https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod';
+      'https://z2pkcs0rc0.execute-api.ap-northeast-1.amazonaws.com/Prod';
 
   ApiService({
-  String authBasePath = _defaultAuthBasePath,
-  String storesBasePath = _defaultStoresBasePath,
-  String lotteryBasePath = _defaultLotteryBasePath,
-  String paymentsBasePath = _defaultPaymentsBasePath,
+    String authBasePath = _defaultAuthBasePath,
+    String storesBasePath = _defaultStoresBasePath,
+    String lotteryBasePath = _defaultLotteryBasePath,
     AuthApi? authApi,
     StoresApi? storesApi,
     LotteryApi? lotteryApi,
-    PaymentsApi? paymentsApi,
   }) {
-    _authApi = authApi ??
-    AuthApi(ApiClient(basePath: authBasePath));
-    _storesApi = storesApi ??
-    StoresApi(ApiClient(basePath: storesBasePath));
-    _lotteryApi = lotteryApi ??
-    LotteryApi(ApiClient(basePath: lotteryBasePath));
-    _paymentsApi = paymentsApi ??
-    PaymentsApi(ApiClient(basePath: paymentsBasePath));
+    _authApi = authApi ?? AuthApi(ApiClient(basePath: authBasePath));
+    _storesApi = storesApi ?? StoresApi(ApiClient(basePath: storesBasePath));
+    _lotteryApi =
+        lotteryApi ?? LotteryApi(ApiClient(basePath: lotteryBasePath));
   }
 
   late final AuthApi _authApi;
   late final StoresApi _storesApi;
   late final LotteryApi _lotteryApi;
-  late final PaymentsApi _paymentsApi;
 
   Future<AuthResponse> login({
     required String email,
@@ -85,11 +76,12 @@ class ApiService {
       throw ApiException(500, '景品在庫の取得結果が空でした');
     }
     final normalizedBody = _normalizeInventoryResponseBody(response.body);
-    final parsed = await _storesApi.apiClient.deserializeAsync(
-          normalizedBody,
-          'ListStoreInventories200Response',
-        )
-        as ListStoreInventories200Response;
+    final parsed =
+        await _storesApi.apiClient.deserializeAsync(
+              normalizedBody,
+              'ListStoreInventories200Response',
+            )
+            as ListStoreInventories200Response;
     return parsed.items;
   }
 
@@ -104,19 +96,21 @@ class ApiService {
 
     final items = normalized['items'];
     if (items is List) {
-      normalized['items'] = items.map((item) {
-        if (item is! Map<String, dynamic>) {
-          return item;
-        }
+      normalized['items'] = items
+          .map((item) {
+            if (item is! Map<String, dynamic>) {
+              return item;
+            }
 
-        final row = Map<String, dynamic>.from(item);
-        _moveKeyIfNeeded(row, 'store_id', 'storeId');
-        _moveKeyIfNeeded(row, 'prize_grade', 'prizeGrade');
-        _moveKeyIfNeeded(row, 'prize_name', 'prizeName');
-        _moveKeyIfNeeded(row, 'total_count', 'totalCount');
-        _moveKeyIfNeeded(row, 'remaining_count', 'remainingCount');
-        return row;
-      }).toList(growable: false);
+            final row = Map<String, dynamic>.from(item);
+            _moveKeyIfNeeded(row, 'store_id', 'storeId');
+            _moveKeyIfNeeded(row, 'prize_grade', 'prizeGrade');
+            _moveKeyIfNeeded(row, 'prize_name', 'prizeName');
+            _moveKeyIfNeeded(row, 'total_count', 'totalCount');
+            _moveKeyIfNeeded(row, 'remaining_count', 'remainingCount');
+            return row;
+          })
+          .toList(growable: false);
     }
 
     return jsonEncode(normalized);
@@ -154,14 +148,17 @@ class ApiService {
       if (response.statusCode >= HttpStatus.badRequest) {
         throw ApiException(response.statusCode, response.body);
       }
-      if (response.body.isEmpty || response.statusCode == HttpStatus.noContent) {
+      if (response.body.isEmpty ||
+          response.statusCode == HttpStatus.noContent) {
         throw ApiException(500, '店舗一覧の取得結果が空でした');
       }
 
-      final storesResponse = await _storesApi.apiClient.deserializeAsync(
-        response.body,
-        'ListStores200Response',
-      ) as ListStores200Response;
+      final storesResponse =
+          await _storesApi.apiClient.deserializeAsync(
+                response.body,
+                'ListStores200Response',
+              )
+              as ListStores200Response;
       return storesResponse.items
           .where((store) => store.isActive)
           .toList(growable: false);
@@ -256,25 +253,27 @@ class ApiService {
     String currency = 'JPY',
     Map<String, String> metadata = const {},
   }) async {
-    final response = await _paymentsApi.createPayment(
-      CreatePaymentRequest(
-        amount: amount,
-        currency: currency,
-        metadata: metadata,
-      ),
+    final now = DateTime.now();
+    return Payment(
+      paymentId: 'mock-payment-${now.microsecondsSinceEpoch}',
+      status: PaymentStatusEnum.PAID,
+      amount: amount,
+      currency: currency,
+      createdAt: now,
+      paidAt: now,
     );
-    if (response == null) {
-      throw ApiException(500, '決済開始結果を取得できませんでした');
-    }
-    return response;
   }
 
   Future<Payment> getPaymentById({required String paymentId}) async {
-    final response = await _paymentsApi.getPaymentById(paymentId);
-    if (response == null) {
-      throw ApiException(500, '決済状態を取得できませんでした');
-    }
-    return response;
+    final now = DateTime.now();
+    return Payment(
+      paymentId: paymentId,
+      status: PaymentStatusEnum.PAID,
+      amount: 700,
+      currency: 'JPY',
+      createdAt: now,
+      paidAt: now,
+    );
   }
 
   static String userMessageFromException(Object error) {

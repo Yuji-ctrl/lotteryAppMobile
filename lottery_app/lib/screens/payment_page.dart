@@ -1,21 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:openapi/api.dart' show ApiException, Payment, PaymentStatusEnum;
-
-import '../services/api_service.dart';
 import 'animation_page.dart';
 
 class PaymentPage extends StatefulWidget {
   final String kujiName;
   final String resultName; // 既に決まった抽選結果を引き継ぐ
   final String? resultId;
-  final ApiService? apiService;
 
   const PaymentPage({
     super.key,
     required this.kujiName,
     required this.resultName,
     this.resultId,
-    this.apiService,
   });
 
   @override
@@ -24,19 +19,11 @@ class PaymentPage extends StatefulWidget {
 
 class _PaymentPageState extends State<PaymentPage> {
   static const int _paymentAmount = 700;
-  static const Duration _pollInterval = Duration(seconds: 1);
-  static const int _maxPollingCount = 8;
+  static const Duration _mockProcessingDuration = Duration(seconds: 2);
 
-  late final ApiService _apiService;
   int _selectedMethod = 0;
   bool _isSubmitting = false;
   String? _progressLabel;
-
-  @override
-  void initState() {
-    super.initState();
-    _apiService = widget.apiService ?? ApiService();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -55,8 +42,8 @@ class _PaymentPageState extends State<PaymentPage> {
             ListTile(
               tileColor: Colors.grey[100],
               title: Text(widget.kujiName),
-              trailing: const Text(
-                '¥700',
+              trailing: Text(
+                '¥$_paymentAmount',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
@@ -129,43 +116,25 @@ class _PaymentPageState extends State<PaymentPage> {
   Future<void> _onTapConfirm() async {
     setState(() {
       _isSubmitting = true;
-      _progressLabel = '決済を開始しています...';
+      _progressLabel = '決済をシミュレーションしています...';
     });
 
     try {
-      final payment = await _apiService.createPayment(
-        amount: _paymentAmount,
-        currency: 'JPY',
-        metadata: {
-          'kujiName': widget.kujiName,
-          'paymentMethod': _selectedMethod == 0 ? 'credit_card' : 'paypay',
-        },
-      );
+      await Future<void>.delayed(_mockProcessingDuration);
       if (!mounted) return;
-
-      final completedPayment = await _waitForPaymentCompletion(payment);
-      if (!mounted) return;
-
-      if (!_isPaymentPaid(completedPayment.status)) {
-        throw ApiException(500, '決済が完了しませんでした。しばらくしてから再度お試しください。');
-      }
 
       await Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) =>
-              LotteryAnimationPage(
-                resultName: widget.resultName,
-                resultId: widget.resultId,
-              ),
+          builder: (context) => LotteryAnimationPage(
+            resultName: widget.resultName,
+            resultId: widget.resultId,
+          ),
         ),
       );
-    } on ApiException catch (e) {
-      if (!mounted) return;
-      _showErrorSnackBar(ApiService.paymentUserMessageFromException(e));
     } catch (_) {
       if (!mounted) return;
-      _showErrorSnackBar('決済処理に失敗しました。通信環境を確認して再度お試しください。');
+      _showErrorSnackBar('決済シミュレーションに失敗しました。再度お試しください。');
     } finally {
       if (!mounted) return;
       setState(() {
@@ -173,37 +142,6 @@ class _PaymentPageState extends State<PaymentPage> {
         _progressLabel = null;
       });
     }
-  }
-
-  Future<Payment> _waitForPaymentCompletion(Payment initialPayment) async {
-    var latest = initialPayment;
-    if (_isTerminalPaymentStatus(latest.status)) {
-      return latest;
-    }
-
-    for (var i = 0; i < _maxPollingCount; i++) {
-      if (!mounted) break;
-      setState(() {
-        _progressLabel = '決済結果を確認中... (${i + 1}/$_maxPollingCount)';
-      });
-
-      await Future<void>.delayed(_pollInterval);
-      latest = await _apiService.getPaymentById(paymentId: latest.paymentId);
-      if (_isTerminalPaymentStatus(latest.status)) {
-        return latest;
-      }
-    }
-
-    return latest;
-  }
-
-  bool _isPaymentPaid(PaymentStatusEnum status) =>
-      status == PaymentStatusEnum.PAID;
-
-  bool _isTerminalPaymentStatus(PaymentStatusEnum status) {
-    return status == PaymentStatusEnum.PAID ||
-        status == PaymentStatusEnum.FAILED ||
-        status == PaymentStatusEnum.CANCELED;
   }
 
   void _showErrorSnackBar(String message) {

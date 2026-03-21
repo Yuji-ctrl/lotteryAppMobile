@@ -18,7 +18,9 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   static const double _fallbackLatitude = 35.8738;
   static const double _fallbackLongitude = 139.7955;
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService = ApiService(
+    storesBasePath: "https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod"
+  );
   List<KujiStatus> _allShops = [];
   bool _isLoadingStores = true;
   String? _storesError;

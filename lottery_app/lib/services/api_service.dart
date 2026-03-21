@@ -5,20 +5,39 @@ import 'package:collection/collection.dart';
 import 'package:openapi/api.dart';
 
 class ApiService {
+  static const String _defaultAuthBasePath =
+    'https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod';
+  static const String _defaultStoresBasePath =
+    'https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod';
+  static const String _defaultLotteryBasePath =
+    'https://z2pkcs0rc0.execute-api.ap-northeast-1.amazonaws.com/Prod';
+  static const String _defaultPaymentsBasePath =
+    'https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod';
+
   ApiService({
+  String authBasePath = _defaultAuthBasePath,
+  String storesBasePath = _defaultStoresBasePath,
+  String lotteryBasePath = _defaultLotteryBasePath,
+  String paymentsBasePath = _defaultPaymentsBasePath,
     AuthApi? authApi,
     StoresApi? storesApi,
     LotteryApi? lotteryApi,
     PaymentsApi? paymentsApi,
-  }) : _authApi = authApi ?? AuthApi(),
-       _storesApi = storesApi ?? StoresApi(),
-       _lotteryApi = lotteryApi ?? LotteryApi(),
-       _paymentsApi = paymentsApi ?? PaymentsApi();
+  }) {
+    _authApi = authApi ??
+    AuthApi(ApiClient(basePath: authBasePath));
+    _storesApi = storesApi ??
+    StoresApi(ApiClient(basePath: storesBasePath));
+    _lotteryApi = lotteryApi ??
+    LotteryApi(ApiClient(basePath: lotteryBasePath));
+    _paymentsApi = paymentsApi ??
+    PaymentsApi(ApiClient(basePath: paymentsBasePath));
+  }
 
-  final AuthApi _authApi;
-  final StoresApi _storesApi;
-  final LotteryApi _lotteryApi;
-  final PaymentsApi _paymentsApi;
+  late final AuthApi _authApi;
+  late final StoresApi _storesApi;
+  late final LotteryApi _lotteryApi;
+  late final PaymentsApi _paymentsApi;
 
   Future<AuthResponse> login({
     required String email,
@@ -50,11 +69,64 @@ class ApiService {
   Future<List<Inventory>> fetchStoreInventories({
     required String storeId,
   }) async {
-    final response = await _storesApi.listStoreInventories(storeId);
-    if (response == null) {
+    final response = await _storesApi.apiClient.invokeAPI(
+      '/store/$storeId/inventorie',
+      'GET',
+      <QueryParam>[],
+      null,
+      <String, String>{},
+      <String, String>{},
+      null,
+    );
+    if (response.statusCode >= HttpStatus.badRequest) {
+      throw ApiException(response.statusCode, response.body);
+    }
+    if (response.body.isEmpty || response.statusCode == HttpStatus.noContent) {
       throw ApiException(500, '景品在庫の取得結果が空でした');
     }
-    return response.items;
+    final normalizedBody = _normalizeInventoryResponseBody(response.body);
+    final parsed = await _storesApi.apiClient.deserializeAsync(
+          normalizedBody,
+          'ListStoreInventories200Response',
+        )
+        as ListStoreInventories200Response;
+    return parsed.items;
+  }
+
+  String _normalizeInventoryResponseBody(String rawBody) {
+    final decoded = jsonDecode(rawBody);
+    if (decoded is! Map<String, dynamic>) {
+      return rawBody;
+    }
+
+    final normalized = Map<String, dynamic>.from(decoded);
+    _moveKeyIfNeeded(normalized, 'store_id', 'storeId');
+
+    final items = normalized['items'];
+    if (items is List) {
+      normalized['items'] = items.map((item) {
+        if (item is! Map<String, dynamic>) {
+          return item;
+        }
+
+        final row = Map<String, dynamic>.from(item);
+        _moveKeyIfNeeded(row, 'store_id', 'storeId');
+        _moveKeyIfNeeded(row, 'prize_grade', 'prizeGrade');
+        _moveKeyIfNeeded(row, 'prize_name', 'prizeName');
+        _moveKeyIfNeeded(row, 'total_count', 'totalCount');
+        _moveKeyIfNeeded(row, 'remaining_count', 'remainingCount');
+        return row;
+      }).toList(growable: false);
+    }
+
+    return jsonEncode(normalized);
+  }
+
+  void _moveKeyIfNeeded(Map<String, dynamic> source, String from, String to) {
+    if (!source.containsKey(from) || source.containsKey(to)) {
+      return;
+    }
+    source[to] = source[from];
   }
 
   Future<List<Store>> fetchNearbyStores({

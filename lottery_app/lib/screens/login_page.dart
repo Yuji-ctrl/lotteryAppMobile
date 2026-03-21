@@ -79,7 +79,7 @@ class _LoginPageState extends State<LoginPage> {
 
       await Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const TopPage()),
+        MaterialPageRoute(builder: (context) => const HomePage()),
       );
     } on ApiException catch (e) {
       if (!mounted) return;

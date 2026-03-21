@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_map/flutter_map.dart';
@@ -27,11 +29,37 @@ class _HomePageState extends State<HomePage> {
 
   Position? _currentPosition;
   final MapController _mapController = MapController();
+  StreamSubscription<Position>? _positionSubscription;
+  List<KujiStatus> _nearbyShops = [];
+  static const double _nearbyRadiusMeters = 500;
 
   @override
   void initState() {
     super.initState();
+    _nearbyShops = List<KujiStatus>.from(_allShops);
     _loadCurrentLocation();
+  }
+
+  void _updateNearbyShops() {
+    if (_currentPosition == null) {
+      _nearbyShops = List<KujiStatus>.from(_allShops);
+      return;
+    }
+
+    _nearbyShops = _allShops.where((shop) {
+      final distance = Geolocator.distanceBetween(
+        _currentPosition!.latitude,
+        _currentPosition!.longitude,
+        shop.latitude,
+        shop.longitude,
+      );
+      return distance <= _nearbyRadiusMeters;
+    }).toList();
+
+    if (_nearbyShops.isEmpty) {
+      // 一定距離内に無ければ、全店を表示(ユーザに選択肢を提供)
+      _nearbyShops = List<KujiStatus>.from(_allShops);
+    }
   }
 
   Future<void> _loadCurrentLocation() async {
@@ -99,6 +127,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   @override
+  void dispose() {
+    _positionSubscription?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final initialCenter = _currentPosition != null
         ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
@@ -119,14 +153,33 @@ class _HomePageState extends State<HomePage> {
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.example.app',
+                  userAgentPackageName: 'com.yourname.kujimap',
                 ),
+                if (_currentPosition != null)
+                  CircleLayer(
+                    circles: [
+                      CircleMarker(
+                        point: LatLng(
+                          _currentPosition!.latitude,
+                          _currentPosition!.longitude,
+                        ),
+                        color: Colors.blue.withOpacity(0.15),
+                        borderStrokeWidth: 2,
+                        borderColor: Colors.blue,
+                        useRadiusInMeter: true,
+                        radius: _nearbyRadiusMeters,
+                      ),
+                    ],
+                  ),
                 MarkerLayer(
                   markers: [
                     // 現在位置
                     if (_currentPosition != null)
                       Marker(
-                        point: LatLng(_currentPosition!.latitude, _currentPosition!.longitude),
+                        point: LatLng(
+                          _currentPosition!.latitude,
+                          _currentPosition!.longitude,
+                        ),
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.blue,
@@ -138,13 +191,17 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ),
                     // 店舗マーカー
-                    ..._allShops.map((shop) {
+                    ..._nearbyShops.map((shop) {
                       return Marker(
                         point: LatLng(shop.latitude, shop.longitude),
                         child: GestureDetector(
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('${shop.shopName}\n${shop.kujiName}')),
+                              SnackBar(
+                                content: Text(
+                                  '${shop.shopName}\n${shop.kujiName}',
+                                ),
+                              ),
                             );
                           },
                           child: Icon(
@@ -154,7 +211,7 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                       );
-                    }).toList(),
+                    }),
                   ],
                 ),
               ],

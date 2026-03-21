@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
@@ -59,14 +60,25 @@ class _HomePageState extends State<HomePage> {
       final stores = await _apiService.fetchNearbyStores(
         latitude: latitude,
         longitude: longitude,
-        searchRadiusMeter: 1000,
+        searchRadiusMeter: 1000000,
       );
+      // if (kDebugMode) {
+      if (true) {
+        // debugPrint('fetchNearbyStores response count: ${stores.length}');
+        print('fetchNearbyStores response count: ${stores.length}');
+        for (final store in stores.take(5)) {
+          print(
+            'storeId=${store.storeId}, storeName=${store.storeName}, latitude=${store.latitude}, longitude=${store.longitude}',
+          );
+        }
+      }
 
       if (!mounted) return;
       setState(() {
         _allShops = stores.map(_toKujiStatus).toList(growable: false);
       });
-    } catch (_) {
+    } catch (e) {
+      print(e);
       if (!mounted) return;
       setState(() {
         _storesError = '店舗一覧の取得に失敗しました。通信環境を確認して再度お試しください。';

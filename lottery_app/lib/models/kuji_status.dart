@@ -1,4 +1,5 @@
 class KujiStatus {
+  final String? storeId;
   final String shopName;
   final String kujiName;
   int prizeA;
@@ -10,6 +11,7 @@ class KujiStatus {
   bool get isSoldOut => prizeA == 0 && prizeB == 0 && prizeC == 0;
 
   KujiStatus({
+    this.storeId,
     required this.shopName,
     required this.kujiName,
     this.prizeA = 0,

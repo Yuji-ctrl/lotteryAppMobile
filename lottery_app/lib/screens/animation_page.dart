@@ -3,7 +3,13 @@ import 'result_page.dart';
 // ④ 抽選演出画面
 class LotteryAnimationPage extends StatefulWidget {
   final String resultName;
-  const LotteryAnimationPage({super.key, required this.resultName});
+  final String? resultId;
+
+  const LotteryAnimationPage({
+    super.key,
+    required this.resultName,
+    this.resultId,
+  });
 
   @override
   State<LotteryAnimationPage> createState() => _LotteryAnimationPageState();
@@ -17,7 +23,12 @@ class _LotteryAnimationPageState extends State<LotteryAnimationPage> {
       if (mounted) {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => ResultPage(resultName: widget.resultName)),
+          MaterialPageRoute(
+            builder: (context) => ResultPage(
+              resultName: widget.resultName,
+              resultId: widget.resultId,
+            ),
+          ),
         );
       }
     });

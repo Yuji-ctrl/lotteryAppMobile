@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart';
 import 'package:openapi/api.dart';
 
 import 'package:lottery_app/services/api_service.dart';
@@ -74,6 +78,15 @@ class _FakeLotteryApi extends LotteryApi {
 }
 
 void main() {
+  StoresApi _storesApiWithMockClient(
+    MockClient mockClient, {
+    String basePath =
+        'https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod',
+  }) {
+    final apiClient = ApiClient(basePath: basePath)..client = mockClient;
+    return StoresApi(apiClient);
+  }
+
   group('ApiService.parseApiExceptionMessage', () {
     test('returns message field when API error body is JSON', () {
       final error = ApiException(
@@ -145,6 +158,62 @@ void main() {
           isA<ApiException>()
               .having((e) => e.code, 'code', 500)
               .having((e) => e.message, 'message', '店舗一覧の取得結果が空でした'),
+        ),
+      );
+    });
+  });
+
+  group('ApiService.fetchAllStores', () {
+    test('returns only active stores from stores-all endpoint', () async {
+      final mockClient = MockClient((request) async {
+        expect(
+          request.url.toString(),
+          'https://dzqidy2gl8.execute-api.ap-northeast-1.amazonaws.com/Prod/stores-all',
+        );
+
+        return http.Response(
+          '{"items":[{"storeId":"store-1","storeName":"Active Store","address":"Tokyo","latitude":35.0,"longitude":139.0,"geohash":"xn76","isActive":true},{"storeId":"store-2","storeName":"Inactive Store","address":"Tokyo","latitude":35.1,"longitude":139.1,"geohash":"xn77","isActive":false}]}',
+          200,
+          headers: {'content-type': 'application/json'},
+        );
+      });
+      final storesApi = _storesApiWithMockClient(mockClient);
+      final service = ApiService(storesApi: storesApi);
+
+      final stores = await service.fetchAllStores();
+
+      expect(stores.length, 1);
+      expect(stores.first.storeId, 'store-1');
+    });
+
+    test('throws ApiException when stores-all request fails', () async {
+      final mockClient = MockClient((_) async => http.Response('error', 500));
+      final storesApi = _storesApiWithMockClient(mockClient);
+      final service = ApiService(storesApi: storesApi);
+
+      expect(
+        service.fetchAllStores,
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.code, 'code', 500)
+              .having((e) => e.message, 'message', 'error'),
+        ),
+      );
+    });
+
+    test('wraps SocketException as ApiException', () async {
+      final mockClient = MockClient(
+        (_) async => throw const SocketException('No route to host'),
+      );
+      final storesApi = _storesApiWithMockClient(mockClient);
+      final service = ApiService(storesApi: storesApi);
+
+      expect(
+        service.fetchAllStores,
+        throwsA(
+          isA<ApiException>()
+              .having((e) => e.code, 'code', 400)
+              .having((e) => e.message ?? '', 'message', contains('Socket operation failed')),
         ),
       );
     });

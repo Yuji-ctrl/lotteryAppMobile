@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:openapi/api.dart' show Store;
 import '../models/kuji_status.dart';
+import '../services/api_service.dart';
 import 'detail_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -13,12 +15,12 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // 全店舗の在庫データをリストで保持
-  final List<KujiStatus> _allShops = [
-    KujiStatus(shopName: 'ローソン', kujiName: 'ワンピース 一番くじ', latitude: 35.8738, longitude: 139.7955),
-    KujiStatus(shopName: 'ファミリーマート', kujiName: 'ポケモンくじ', prizeA: 2, prizeB: 5, prizeC: 15, latitude: 35.8712, longitude: 139.7945),
-    KujiStatus(shopName: 'セブンイレブン', kujiName: 'お菓子くじ', prizeA: 5, prizeB: 10, prizeC: 30, latitude: 35.8750, longitude: 139.7970),
-  ];
+  static const double _fallbackLatitude = 35.8738;
+  static const double _fallbackLongitude = 139.7955;
+  final ApiService _apiService = ApiService();
+  List<KujiStatus> _allShops = [];
+  bool _isLoadingStores = true;
+  String? _storesError;
 
   Position? _currentPosition;
   final MapController _mapController = MapController();
@@ -30,18 +32,71 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _loadCurrentLocation() async {
-    final permission = await Geolocator.requestPermission();
-    if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
-      _currentPosition = await Geolocator.getCurrentPosition();
-      setState(() {});
+    try {
+      final permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.whileInUse || permission == LocationPermission.always) {
+        _currentPosition = await Geolocator.getCurrentPosition();
+      }
+    } catch (_) {
+      // Continue with fallback coordinates when location cannot be obtained.
+    } finally {
+      if (mounted) {
+        setState(() {});
+      }
+      await _loadStores();
     }
+  }
+
+  Future<void> _loadStores() async {
+    setState(() {
+      _isLoadingStores = true;
+      _storesError = null;
+    });
+
+    try {
+      final latitude = _currentPosition?.latitude ?? _fallbackLatitude;
+      final longitude = _currentPosition?.longitude ?? _fallbackLongitude;
+      final stores = await _apiService.fetchNearbyStores(
+        latitude: latitude,
+        longitude: longitude,
+        searchRadiusMeter: 1000,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _allShops = stores.map(_toKujiStatus).toList(growable: false);
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _storesError = '店舗一覧の取得に失敗しました。通信環境を確認して再度お試しください。';
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingStores = false;
+      });
+    }
+  }
+
+  KujiStatus _toKujiStatus(Store store) {
+    return KujiStatus(
+      storeId: store.storeId,
+      shopName: store.storeName,
+      kujiName: 'デジタル一番くじ',
+      prizeA: 1,
+      prizeB: 1,
+      prizeC: 1,
+      latitude: store.latitude,
+      longitude: store.longitude,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final initialCenter = _currentPosition != null
         ? LatLng(_currentPosition!.latitude, _currentPosition!.longitude)
-        : LatLng(35.8738, 139.7955);
+      : const LatLng(_fallbackLatitude, _fallbackLongitude);
 
     return Scaffold(
       appBar: AppBar(title: const Text('近くのコンビニ')),
@@ -100,32 +155,57 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
           Expanded(
-            child: ListView.builder(
-              itemCount: _allShops.length,
-              itemBuilder: (context, index) {
-                final shop = _allShops[index];
-                return Card(
-                  margin: const EdgeInsets.all(8.0),
-                  color: shop.isSoldOut ? Colors.grey[300] : Colors.white,
-                  child: ListTile(
-                    title: Text(shop.shopName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text('開催中：${shop.kujiName}${shop.isSoldOut ? " (完売)" : ""}'),
-                    trailing: ElevatedButton(
-                      onPressed: shop.isSoldOut
-                          ? null
-                          : () async {
-                              await Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => KujiDetailPage(status: shop)),
+            child: _isLoadingStores
+                ? const Center(child: CircularProgressIndicator())
+                : _storesError != null
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                _storesError!,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(color: Colors.red),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            ElevatedButton(
+                              onPressed: _loadStores,
+                              child: const Text('再試行'),
+                            ),
+                          ],
+                        ),
+                      )
+                    : _allShops.isEmpty
+                        ? const Center(child: Text('近隣の対象店舗が見つかりませんでした'))
+                        : ListView.builder(
+                            itemCount: _allShops.length,
+                            itemBuilder: (context, index) {
+                              final shop = _allShops[index];
+                              return Card(
+                                margin: const EdgeInsets.all(8.0),
+                                color: shop.isSoldOut ? Colors.grey[300] : Colors.white,
+                                child: ListTile(
+                                  title: Text(shop.shopName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  subtitle: Text('開催中：${shop.kujiName}${shop.isSoldOut ? " (完売)" : ""}'),
+                                  trailing: ElevatedButton(
+                                    onPressed: shop.isSoldOut
+                                        ? null
+                                        : () async {
+                                            await Navigator.push(
+                                              context,
+                                              MaterialPageRoute(builder: (context) => KujiDetailPage(status: shop)),
+                                            );
+                                            setState(() {});
+                                          },
+                                    child: Text(shop.isSoldOut ? '完売' : 'くじを見る'),
+                                  ),
+                                ),
                               );
-                              setState(() {});
                             },
-                      child: Text(shop.isSoldOut ? '完売' : 'くじを見る'),
-                    ),
-                  ),
-                );
-              },
-            ),
+                          ),
           ),
         ],
       ),

@@ -1,7 +1,13 @@
 # Lottery App Mobile
 
 ## Project Overview
-The Lottery App Mobile is a mobile application built with Flutter that allows users to participate in lotteries, check results, and manage their lottery entries in a user-friendly environment. The app is designed to provide a seamless experience for users to engage with various lottery services.
+「~~一番くじ~~をDXする」をコンセプトにモバイルアプリを製作しました。
+（ユーザー側のメリット）家にいながら近隣店舗の残り枚数を確認できる
+（お店側のメリット）面倒なアナログベースのくじ管理から解放される
+紙の~~一番くじ~~最大の特長である、めくるときのぺリぺリ感を演出することを目指しました。（リッチなアニメーションを効果音を制作中）
+フロントエンドにFlutterを、バックエンドにAWSを使用しました。（イベント限定プラン使用のため現在は停止中）
+Progateハッカソン powered by AWS（2026/03/10-21）で制作
+https://progate.connpass.com/event/379252/
 
 ## Repository Structure
 ```
@@ -36,11 +42,21 @@ root/
    ```
 
 ## Features
-- User registration and login functionality.
 - View current and past lottery outcomes.
 - Purchase lottery tickets directly through the app.
-- Notifications for upcoming lottery draws.
 - User-friendly interface designed with Flutter.
 
 ## References
 For more information on Flutter and how to build applications with it, refer to the official [Flutter documentation](https://flutter.dev/docs).
+
+
+5. **分担**:
+　Yuji-ctrl...フロントエンドメンター
+  syuyaad...発案、フロントエンド制作
+  cherry-115...バックエンド、全体設計、統合
+
+6. **今後の展望**
+   AWSはイベント限定プランだったのでVercel等に切り替えてデプロイする
+   ローカル環境でのPATH問題でFlutterのデプロイができなかったのでPC初期化の上実機で動かしてみる
+   ログイン画面でのバリデーション実装・サンプルアカウントの表示
+   位置情報取得関連のバグを修正

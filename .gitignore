@@ -47,6 +47,7 @@ unlinked.ds
 unlinked_spec.ds
 .idea/misc.xml
 .idea/vcs.xml
+.idea/caches
 
 # Android related
 **/android/**/gradle-wrapper.jar

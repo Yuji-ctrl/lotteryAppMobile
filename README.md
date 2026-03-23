@@ -50,12 +50,12 @@ root/
 For more information on Flutter and how to build applications with it, refer to the official [Flutter documentation](https://flutter.dev/docs).
 
 
-5. **分担**:
+## 分担
 　Yuji-ctrl...フロントエンドメンター  
   syuyaad...発案、フロントエンド制作  
   cherry-115...バックエンド、全体設計、統合
 
-6. **今後の展望**
+## 今後の展望
    AWSはイベント限定プランだったのでVercel等に切り替えてデプロイする  
    ローカル環境でのPATH問題でFlutterのデプロイができなかったのでPC初期化の上実機で動かしてみる  
    ログイン画面でのバリデーション実装・サンプルアカウントの表示  
